@@ -1,0 +1,193 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* 深空底色 */
+  --background: oklch(0.06 0.012 260);
+  --foreground: oklch(0.93 0.005 260);
+
+  /* 毛玻璃面板 */
+  --card: oklch(0.08 0.012 260 / 0.6);
+  --card-foreground: oklch(0.93 0.005 260);
+
+  --popover: oklch(0.09 0.012 260 / 0.8);
+  --popover-foreground: oklch(0.93 0.005 260);
+
+  /* 青色 — 视觉/清醒 */
+  --primary: oklch(0.72 0.12 200);
+  --primary-foreground: oklch(0.06 0.012 260);
+
+  --secondary: oklch(0.12 0.012 260);
+  --secondary-foreground: oklch(0.85 0.005 260);
+
+  --muted: oklch(0.12 0.012 260);
+  --muted-foreground: oklch(0.55 0.005 260);
+
+  --accent: oklch(0.12 0.012 260);
+  --accent-foreground: oklch(0.93 0.005 260);
+
+  --destructive: oklch(0.45 0.18 25);
+
+  /* 雾气边框 */
+  --border: oklch(1 0 0 / 6%);
+  --input: oklch(1 0 0 / 8%);
+  --ring: oklch(0.72 0.12 200);
+
+  --chart-1: oklch(0.72 0.12 200);
+  --chart-2: oklch(0.67 0.18 145);
+  --chart-3: oklch(0.75 0.15 75);
+  --chart-4: oklch(0.65 0.18 295);
+  --chart-5: oklch(0.7 0.18 30);
+
+  --sidebar: oklch(0.07 0.012 260 / 0.8);
+  --sidebar-foreground: oklch(0.93 0.005 260);
+  --sidebar-primary: oklch(0.72 0.12 200);
+  --sidebar-primary-foreground: oklch(0.06 0.012 260);
+  --sidebar-accent: oklch(0.12 0.012 260);
+  --sidebar-accent-foreground: oklch(0.93 0.005 260);
+  --sidebar-border: oklch(1 0 0 / 6%);
+  --sidebar-ring: oklch(0.72 0.12 200);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ===== 深空滚动条 ===== */
+::-webkit-scrollbar {
+  width: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 星云呼吸动画 ===== */
+@keyframes nebula-breathe {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes nebula-breathe-thinking {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes nebula-breathe-speaking {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes nebula-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(1.5%, -1%) scale(1.02); }
+  66% { transform: translate(-1%, 1.5%) scale(0.98); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.animate-nebula-breathe {
+  animation: nebula-breathe 24s ease-in-out infinite;
+}
+
+.animate-nebula-breathe-thinking {
+  animation: nebula-breathe-thinking 6s ease-in-out infinite;
+}
+
+.animate-nebula-breathe-speaking {
+  animation: nebula-breathe-speaking 3.5s ease-in-out infinite;
+}
+
+.animate-nebula-drift {
+  animation: nebula-drift 35s ease-in-out infinite;
+}
+
+/* ===== 面板光晕（替代阴影） ===== */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.06), 0 0 60px rgba(34, 211, 238, 0.03);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.06), 0 0 60px rgba(251, 191, 36, 0.03);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.06), 0 0 60px rgba(147, 51, 234, 0.03);
+}
+
+/* ===== 状态色过渡 ===== */
+.state-transition {
+  transition: border-color 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease, color 0.4s ease;
+}

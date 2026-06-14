@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { useAppStore } from '../../stores/appStore'
+import { useVisionContext } from '../../hooks/useVisionContext'
 import BreathingGlow from '../ai-avatar/BreathingGlow'
 import FireflyParticles from '../ai-avatar/FireflyParticles'
 import BreathingCircle from '../interaction/BreathingCircle'
@@ -10,8 +12,13 @@ import DailyPowerCard from '../cards/DailyPowerCard'
 import SettingsPanel from '../settings/SettingsPanel'
 
 export default function FullScreenCall() {
+  const videoRef = useRef<HTMLVideoElement>(null)
   const aiState = useAppStore((s) => s.aiState)
   const mode = useAppStore((s) => s.mode)
+  const cameraEnabled = useAppStore((s) => s.cameraEnabled)
+
+  // 视觉上下文感知（亮度 + 人脸 + 表情）
+  useVisionContext({ videoRef, enabled: cameraEnabled })
 
   const statusLabel = (() => {
     if (mode === 'meditation') return '冥想中'
@@ -51,7 +58,7 @@ export default function FullScreenCall() {
       <ModeSwitchBar />
 
       {/* 用户摄像小窗 */}
-      <UserCameraWindow />
+      <UserCameraWindow ref={videoRef} />
 
       {/* AI 状态标签 */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[140px] z-10 text-center">

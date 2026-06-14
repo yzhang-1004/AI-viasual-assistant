@@ -1,11 +1,24 @@
-import { useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useRef, useCallback } from 'react'
 import { useAppStore } from '../../stores/appStore'
 
-export default function UserCameraWindow() {
-  const videoRef = useRef<HTMLVideoElement>(null)
+const UserCameraWindow = forwardRef<HTMLVideoElement>((_, ref) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const cameraEnabled = useAppStore((s) => s.cameraEnabled)
   const showUserCamera = useAppStore((s) => s.showUserCamera)
   const streamRef = useRef<MediaStream | null>(null)
+
+  // 合并内部 ref 与外部 forwardRef
+  const setVideoRef = useCallback(
+    (node: HTMLVideoElement | null) => {
+      videoRef.current = node
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ;(ref as React.MutableRefObject<HTMLVideoElement | null>).current = node
+      }
+    },
+    [ref],
+  )
 
   useEffect(() => {
     if (!cameraEnabled) {
@@ -43,7 +56,7 @@ export default function UserCameraWindow() {
     <div className="absolute top-6 left-4 z-20">
       <div className="w-28 h-36 rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg bg-black/40 backdrop-blur-sm">
         <video
-          ref={videoRef}
+          ref={setVideoRef}
           autoPlay
           muted
           playsInline
@@ -56,4 +69,6 @@ export default function UserCameraWindow() {
       </div>
     </div>
   )
-}
+})
+UserCameraWindow.displayName = 'UserCameraWindow'
+export default UserCameraWindow

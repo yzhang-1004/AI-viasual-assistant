@@ -20,6 +20,7 @@ export function useConversation() {
   const setAiState = useAppStore((s) => s.setAiState)
   const setAiReplyText = useAppStore((s) => s.setAiReplyText)
   const appendAiReplyText = useAppStore((s) => s.appendAiReplyText)
+  const setUserText = useAppStore((s) => s.setUserText)
   const visionContext = useAppStore((s) => s.visionContext)
   const addRound = useConversationStore((s) => s.addRound)
   const getContextMessages = useConversationStore((s) => s.getContextMessages)
@@ -118,6 +119,7 @@ export function useConversation() {
       const controller = await streamLLM(messages, {
         onToken: (token: string) => {
           setAiState('speaking')
+          setUserText('') // AI 开始回复，清空用户文字
           appendAiReplyText(token)
           // 流式喂入 TTS（过滤 emoji 防止朗读表情符号）
           if (!ttsFailed) {
@@ -230,6 +232,9 @@ export function useConversation() {
 
         processUserInput(final)
       }
+
+      // 实时显示用户说的话
+      setUserText(interim + final)
 
       // 用临时结果更新静音计时器（"预测性预填"逻辑）
       if (interim.trim()) {

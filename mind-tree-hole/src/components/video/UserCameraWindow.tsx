@@ -5,6 +5,7 @@ const UserCameraWindow = forwardRef<HTMLVideoElement>((_, ref) => {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const cameraEnabled = useAppStore((s) => s.cameraEnabled)
   const showUserCamera = useAppStore((s) => s.showUserCamera)
+  const userText = useAppStore((s) => s.userText)
   const streamRef = useRef<MediaStream | null>(null)
 
   // 合并内部 ref 与外部 forwardRef
@@ -67,6 +68,14 @@ const UserCameraWindow = forwardRef<HTMLVideoElement>((_, ref) => {
       <div className="mt-1 text-center">
         <span className="text-[10px] text-white/30">你</span>
       </div>
+      {/* 用户说话文字 */}
+      {userText && (
+        <div className="mt-1 max-w-[112px] text-center">
+          <span className="text-[11px] text-white/50 leading-tight animate-pulse line-clamp-2">
+            {userText}
+          </span>
+        </div>
+      )}
     </div>
   )
 })

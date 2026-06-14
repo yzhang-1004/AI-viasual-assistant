@@ -11,6 +11,7 @@ export const useAppStore = create<AppState & AppActions>((set) => ({
   aiState: 'idle' as AIState,
   aiReplyText: '',
   visionContext: '',
+  userText: '',
 
   setMode: (mode: AppMode) => set({ mode }),
   setCallStatus: (callStatus: CallStatus) => set({ callStatus }),
@@ -22,6 +23,7 @@ export const useAppStore = create<AppState & AppActions>((set) => ({
   setAiReplyText: (aiReplyText: string) => set({ aiReplyText }),
   appendAiReplyText: (chunk: string) => set((s) => ({ aiReplyText: s.aiReplyText + chunk })),
   setVisionContext: (visionContext: string) => set({ visionContext }),
+  setUserText: (userText: string) => set({ userText }),
 }))
 
 export const useConversationStore = create<ConversationState & ConversationActions>((set, get) => ({

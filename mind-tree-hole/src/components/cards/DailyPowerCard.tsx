@@ -1,19 +1,25 @@
-import { useRef, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useAppStore } from '../../stores/appStore'
 
-const SAMPLE_CARDS = [
-  { title: '今日肯定语', text: '你已经做得很好了，记得给自己一个拥抱。' },
-  { title: '微小行动', text: '今天试试对镜子里的自己微笑 3 秒钟。' },
-  { title: '感恩提醒', text: '此刻，想想今天发生的 3 件好事。' },
+const CARDS = [
+  { title: '今日肯定语', text: '你不需要每天都发光。有些日子，只是撑过去，就已经赢了。' },
+  { title: '今日肯定语', text: '你已经比昨天多走了一步。这一步，没人能替你走。' },
+  { title: '今日肯定语', text: '累了就歇一会儿。树不会因为冬天掉光叶子就不是树了。' },
+  { title: '微小行动', text: '喝完这杯水。就当给自己今天的情绪，点了个逗号。' },
+  { title: '微小行动', text: '站起来伸个懒腰。让脊椎一节一节地说"谢谢你"。' },
+  { title: '微小行动', text: '把手放在胸口，感受心跳。那个声音在说：你在，这很好。' },
+  { title: '感恩提醒', text: '今天有一个人、一件事或一个瞬间，让你觉得没那么孤单。哪怕只有一秒。' },
+  { title: '感恩提醒', text: '窗外那棵树，已经在这里站了好多年。它见过很多个今天的你。' },
+  { title: '慰藉一句', text: '没有什么事情是必须今天解决的。天黑了，先睡觉。' },
+  { title: '慰藉一句', text: '你不是在原地打转。你是在螺旋上升——从上面看，你一直在走。' },
+  { title: '慰藉一句', text: '不用急着变好。先允许自己就是这样。' },
+  { title: '今日肯定语', text: '你照顾了那么多人。今天也试着，把自己当其中一个照顾一下。' },
 ]
 
 export default function DailyPowerCard() {
-  const cardRef = useRef<HTMLDivElement>(null)
   const mode = useAppStore((s) => s.mode)
-  const aiReplyText = useAppStore((s) => s.aiReplyText)
 
-  const card = SAMPLE_CARDS[Math.floor(Date.now() / 86400000) % SAMPLE_CARDS.length]
-  const displayText = aiReplyText || card.text
+  const card = useMemo(() => CARDS[Math.floor(Math.random() * CARDS.length)], [])
 
   const handleSave = useCallback(() => {
     const canvas = document.createElement('canvas')
@@ -55,7 +61,7 @@ export default function DailyPowerCard() {
     // 正文（自动换行）
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
     ctx.font = '300 32px "PingFang SC", "Microsoft YaHei", sans-serif'
-    const words = displayText
+    const words = card.text
     const maxWidth = canvas.width - 100
     let lineY = 150
     let currentLine = ''
@@ -95,7 +101,7 @@ export default function DailyPowerCard() {
       a.click()
       URL.revokeObjectURL(url)
     }, 'image/png')
-  }, [card.title, displayText])
+  }, [card.title, card.text])
 
   if (mode !== 'daily-power') return null
 
@@ -119,7 +125,7 @@ export default function DailyPowerCard() {
           </h3>
 
           <p className="text-white/80 text-lg leading-relaxed font-light">
-            {displayText}
+            {card.text}
           </p>
 
           {/* 底部装饰线 */}

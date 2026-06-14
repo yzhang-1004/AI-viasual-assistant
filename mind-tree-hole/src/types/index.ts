@@ -21,6 +21,7 @@ export interface AppState {
   aiState: AIState
   aiReplyText: string
   visionContext: string
+  userText: string
 }
 
 export interface AppActions {
@@ -34,6 +35,7 @@ export interface AppActions {
   setAiReplyText: (text: string) => void
   appendAiReplyText: (chunk: string) => void
   setVisionContext: (ctx: string) => void
+  setUserText: (text: string) => void
 }
 
 export interface ConversationState {

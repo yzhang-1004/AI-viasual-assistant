@@ -7,6 +7,10 @@ import type { StreamingTTSHandle } from '../services/tts'
 import { buildSystemPrompt, getL0Response } from '../utils/prompts'
 import type { BrowserSpeechRecognition } from '../services/speech'
 
+/** 移除所有 emoji，防止 TTS 逐字朗读表情符号 */
+const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{238C}\u{23CF}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{2B50}\u{2B55}\u{3030}\u{303D}\u{3297}\u{3299}]/gu
+const stripEmoji = (text: string) => text.replace(EMOJI_REGEX, '')
+
 // 重新导出类型以便其他模块使用
 export type { BrowserSpeechRecognition }
 
@@ -74,7 +78,7 @@ export function useConversation() {
       })
       // TTS 朗读前暂停语音识别，防止语音回路
       pauseRecognitionForTTS()
-      await speakText(l0Response)
+      await speakText(stripEmoji(l0Response))
       resumeRecognitionAfterTTS()
       setAiState('listening')
       isProcessingRef.current = false
@@ -115,9 +119,9 @@ export function useConversation() {
         onToken: (token: string) => {
           setAiState('speaking')
           appendAiReplyText(token)
-          // 流式喂入 TTS（服务端自动分句）
+          // 流式喂入 TTS（过滤 emoji 防止朗读表情符号）
           if (!ttsFailed) {
-            tts.feed(token)
+            tts.feed(stripEmoji(token))
           }
           // TTS 可能立即开始播放，暂停语音识别
           if (!isTtsSpeakingRef.current) {
@@ -133,9 +137,9 @@ export function useConversation() {
           })
 
           if (ttsFailed) {
-            // 降级：使用浏览器 TTS 朗读全文
+            // 降级：使用浏览器 TTS 朗读全文（过滤 emoji）
             pauseRecognitionForTTS()
-            await speakText(fullText)
+            await speakText(stripEmoji(fullText))
             resumeRecognitionAfterTTS()
             setAiState('listening')
             isProcessingRef.current = false

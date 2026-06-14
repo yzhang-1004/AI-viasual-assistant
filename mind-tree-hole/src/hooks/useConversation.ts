@@ -2,6 +2,8 @@ import { useCallback, useRef } from 'react'
 import { useAppStore, useConversationStore } from '../stores/appStore'
 import { streamLLM } from '../services/llm'
 import { speakText, stopSpeaking, createSpeechRecognition, isSpeechRecognitionSupported } from '../services/speech'
+import { createStreamingTTS } from '../services/tts'
+import type { StreamingTTSHandle } from '../services/tts'
 import { buildSystemPrompt, getL0Response } from '../utils/prompts'
 import type { BrowserSpeechRecognition } from '../services/speech'
 
@@ -20,9 +22,34 @@ export function useConversation() {
 
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const ttsHandleRef = useRef<StreamingTTSHandle | null>(null)
   const isProcessingRef = useRef(false)
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastUserTextRef = useRef('')
+  const isTtsSpeakingRef = useRef(false) // TTS 朗读期间暂停语音识别，防止语音回路
+
+  /**
+   * TTS 朗读前暂停语音识别
+   */
+  const pauseRecognitionForTTS = () => {
+    isTtsSpeakingRef.current = true
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop() } catch { /* 忽略 */ }
+    }
+  }
+
+  /**
+   * TTS 朗读结束后恢复语音识别
+   */
+  const resumeRecognitionAfterTTS = () => {
+    isTtsSpeakingRef.current = false
+    if (recognitionRef.current && useAppStore.getState().callStatus !== 'idle') {
+      // 延迟一点再启动，避免 TTS 结束瞬间的音箱回声
+      setTimeout(() => {
+        try { recognitionRef.current?.start() } catch { /* 忽略 */ }
+      }, 300)
+    }
+  }
 
   /**
    * 处理用户输入文本
@@ -45,7 +72,10 @@ export function useConversation() {
         aiReply: l0Response,
         timestamp: Date.now(),
       })
+      // TTS 朗读前暂停语音识别，防止语音回路
+      pauseRecognitionForTTS()
       await speakText(l0Response)
+      resumeRecognitionAfterTTS()
       setAiState('listening')
       isProcessingRef.current = false
       return
@@ -54,6 +84,23 @@ export function useConversation() {
     // L2: 云端 LLM
     setAiState('thinking')
     setAiReplyText('')
+
+    // 创建 CosyVoice 流式 TTS（降级时会回退到浏览器 TTS）
+    let ttsFailed = false
+    const tts = createStreamingTTS({
+      onEnd: () => {
+        resumeRecognitionAfterTTS()
+        setAiState('listening')
+        isProcessingRef.current = false
+        ttsHandleRef.current = null
+      },
+      onError: (err: Error) => {
+        ttsFailed = true
+        console.warn('CosyVoice 不可用，降级到浏览器 TTS:', err.message)
+        ttsHandleRef.current = null
+      },
+    })
+    ttsHandleRef.current = tts
 
     const systemPrompt = buildSystemPrompt(mode, visionContext)
     const history = getContextMessages()
@@ -68,6 +115,14 @@ export function useConversation() {
         onToken: (token: string) => {
           setAiState('speaking')
           appendAiReplyText(token)
+          // 流式喂入 TTS（服务端自动分句）
+          if (!ttsFailed) {
+            tts.feed(token)
+          }
+          // TTS 可能立即开始播放，暂停语音识别
+          if (!isTtsSpeakingRef.current) {
+            pauseRecognitionForTTS()
+          }
         },
         onDone: async (fullText: string) => {
           addRound({
@@ -77,19 +132,23 @@ export function useConversation() {
             timestamp: Date.now(),
           })
 
-          // 朗读回复
-          await speakText(fullText)
-
-          setAiState('listening')
-          isProcessingRef.current = false
-
-          // 冥想模式：朗读完回到倾听状态
-          if (mode === 'meditation') {
-            setTimeout(() => setAiState('listening'), 500)
+          if (ttsFailed) {
+            // 降级：使用浏览器 TTS 朗读全文
+            pauseRecognitionForTTS()
+            await speakText(fullText)
+            resumeRecognitionAfterTTS()
+            setAiState('listening')
+            isProcessingRef.current = false
+            ttsHandleRef.current = null
+          } else {
+            // CosyVoice 流式：通知结束，onEnd 回调会处理恢复
+            tts.flush()
           }
         },
         onError: (error: Error) => {
           console.error('LLM 错误:', error)
+          ttsHandleRef.current?.abort()
+          ttsHandleRef.current = null
           setAiReplyText(`抱歉，出了点问题：${error.message}`)
           setAiState('idle')
           isProcessingRef.current = false
@@ -99,6 +158,8 @@ export function useConversation() {
       abortRef.current = controller
     } catch (err) {
       console.error('对话处理异常:', err)
+      ttsHandleRef.current?.abort()
+      ttsHandleRef.current = null
       setAiState('idle')
       isProcessingRef.current = false
     }
@@ -112,6 +173,8 @@ export function useConversation() {
       abortRef.current.abort()
       abortRef.current = null
     }
+    ttsHandleRef.current?.abort()
+    ttsHandleRef.current = null
     stopSpeaking()
     setAiState('listening')
     isProcessingRef.current = false
@@ -133,6 +196,9 @@ export function useConversation() {
 
     // 识别结果回调
     recognition.onresult = (event) => {
+      // TTS 朗读期间忽略所有识别结果，防止语音回路
+      if (isTtsSpeakingRef.current) return
+
       let interim = ''
       let final = ''
 
@@ -177,6 +243,8 @@ export function useConversation() {
 
     // 识别结束自动重启
     recognition.onend = () => {
+      // TTS 朗读期间不自动重启
+      if (isTtsSpeakingRef.current) return
       // 如果仍在通话状态，自动重启识别
       if (useAppStore.getState().callStatus !== 'idle') {
         try { recognition.start() } catch { /* 忽略 */ }

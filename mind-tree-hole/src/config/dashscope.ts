@@ -1,8 +1,13 @@
 const STORAGE_KEY = 'mindtree_dashscope_key'
-const DEFAULT_KEY = 'sk-8c54c7fd5f124e42a2baaab5a926b2d6'
+// 安全提示：请勿在代码中硬编码 API Key，使用设置面板或 .env 文件配置
+const DEFAULT_KEY = ''
 
 export function getApiKey(): string {
-  return localStorage.getItem(STORAGE_KEY) || DEFAULT_KEY
+  return (
+    localStorage.getItem(STORAGE_KEY) ||
+    (import.meta.env.VITE_DASHSCOPE_API_KEY as string) ||
+    DEFAULT_KEY
+  )
 }
 
 export function setApiKey(key: string): void {
